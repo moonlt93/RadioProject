@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="com.radio.mapper.PictureRoomMapper">
+<delete id="delete" >
+DELETE FROM tbl_pictureroom
+WHERE id = #{id}
+</delete>
+
+<update id="update" >
+UPDATE tbl_pictureroom
+SET
+  <if test="fileName != null">
+	fileName = #{fileName},
+  </if>
+	title = #{title},
+	content = #{content}
+WHERE id = #{id}
+</update>
+
+<select id="selectById" resultType="com.radio.domain.PictureRoomVO" >
+SELECT 
+	id, 
+	title,
+	content,
+	memberId,
+	fileName,
+	hit,
+	regdate
+FROM tbl_pictureroom 
+WHERE id = #{id}
+</select>
+
+<insert id="insert" >
+INSERT INTO tbl_pictureroom
+(id, title, content, memberId, filename, hit, regdate)
+VALUES
+(seq_pictureroom.nextval, #{title}, #{content}, #{memberId}, #{fileName}, 0, SYSDATE)
+</insert>
+
+<select id="list" resultType="com.radio.domain.PictureRoomVO">
+<![CDATA[
+select * from (
+	select * from tbl_pictureroom 
+	where id < #{from}
+	order by id desc)
+where rownum <= #{length}
+]]>
+</select>
+<!-- 
+<insert id="insert">
+insert into tbl_mini (num, content, writer)
+values (seq_mini.nextval, #{content}, #{writer})
+</insert>
+-->
+<insert id="insertSelectKey">
+	<selectKey keyProperty="id" order="BEFORE" resultType="long">
+		select seq_pictureroom.nextval from dual
+	</selectKey>
+	
+	insert into tbl_pictureroom (id, title, content, memberId, filename, hit, regdate)
+	values (#{id}, #{title}, #{content}, #{memberId},
+	
+	  <choose>
+	    <when test="fileName != null">
+		 #{id} || '_' || #{fileName},
+	    </when>
+	    <otherwise>
+	      '',
+	    </otherwise>
+	  </choose>
+	 
+	  0, SYSDATE)
+
+</insert>
+<!-- 
+<select id="getTotalCount" resultType="int">
+	select count(*) from tbl_mini
+	<include refid="criteria"></include>
+</select>
+ -->
+</mapper>
+
+
+
+<!-- 
+create SEQUENCE seq_pictureroom;
+
+create table tbl_pictureroom (
+    id number PRIMARY key,
+    title varchar2(300),
+    content varchar2(3000),
+     member_id varchar2(20),
+    filename varchar2(300),
+    hit number,
+    regdate date
+);
+
+desc tbl_playlist;
+
+select * from tbl_member;
+select * from tbl_pictureroom;
+
+alter table tbl_pictureroom RENAME column
+member_id to memberId;
+
+
+ -->

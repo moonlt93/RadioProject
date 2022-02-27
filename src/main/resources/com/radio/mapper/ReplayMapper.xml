@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.radio.mapper.ReplayMapper">
+
+<sql id="criteria">
+<where>
+	<foreach item="type" collection="typeArr" separator="OR">
+		<choose>
+			<when test="type == 'T'.toString()">
+				title LIKE '%' || #{keyword} || '%'
+			</when>
+			<when test="type == 'C'.toString()">
+				content LIKE '%' || #{keyword} || '%'
+			</when>
+			<when test="type == 'W'.toString()">
+				writer LIKE '%' || #{keyword} || '%'
+			</when>
+		</choose>
+	</foreach>
+</where>
+</sql>
+
+
+	<select id="getList" resultType="com.radio.domain.ReplayVO">
+<![CDATA[
+		select * from tbl_Replay where bno > 0
+]]>		
+		
+	</select>
+	
+	<select id="getListWithPaging" resultType="com.radio.domain.ReplayVO">
+<![CDATA[	
+	SELECT
+	 bno, title, content,
+	 writer, regdate, updatedate
+	FROM
+	 (
+	  SELECT 
+	   ROW_NUMBER() OVER (ORDER BY bno DESC) rn,
+	   bno, title, content, writer,
+	   regdate, updatedate
+	  FROM
+	   tbl_Replay
+]]>
+	
+	<include refid="criteria"></include>
+
+<![CDATA[
+	 )
+	WHERE
+	 rn BETWEEN (#{pageNum} - 1) * #{amount} + 1 AND #{pageNum} * #{amount}
+]]>		
+	</select>
+	
+	
+	<insert id="insert">
+		insert into tbl_Replay (bno, title, content, writer,filename)
+		values (seq_REboard.nextval, #{title}, #{content}, #{writer},#{filename})
+	</insert>
+	
+	<insert id="insertSelectKey">
+		<selectKey keyProperty="bno" order="BEFORE" resultType="long">
+		select seq_REboard.nextval from dual
+		</selectKey>
+	
+		insert into tbl_Replay (bno, title, content, writer,filename)
+		values (#{bno }, #{title}, #{content}, #{writer},#{filename})
+	</insert>
+	
+	<select id="read" resultType="com.radio.domain.ReplayVO">
+		select * from tbl_Replay where bno = #{bno}
+	</select>
+	
+	<delete id="delete">
+		delete from tbl_replay where bno = #{bno}
+	</delete>
+	
+	<update id="update">
+	UPDATE tbl_Replay
+	SET
+	  title = #{title},
+	  content = #{content},
+	  writer =  #{writer},
+	  filename= #{filename},
+	  updateDate = sysdate
+	WHERE
+	  bno = #{bno}
+	</update>
+	
+	<select id="getTotalCount" resultType="int">
+	SELECT count(*) FROM tbl_replay	
+	<include refid="criteria"></include>
+	</select>
+	
+	
+</mapper>
+
+
+
+

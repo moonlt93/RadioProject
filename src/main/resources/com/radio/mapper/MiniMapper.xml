@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="com.radio.mapper.MiniMapper">
+<sql id="criteria">
+	<where>
+		<foreach item="type" collection="typeArr" separator="OR">
+			<choose>
+				<when test="type == 'C'.toString()">
+					content LIKE '%' || #{keyword} || '%'
+				</when>
+				<when test="type == 'W'.toString()">
+					writer LIKE '%' || #{keyword} || '%'
+				</when>
+			</choose>
+		</foreach>
+	</where>
+</sql>
+
+<select id="getList" resultType="com.radio.domain.MiniVO">
+<![CDATA[
+select * from tbl_mini where num > 0
+]]>
+</select>
+
+<select id="getListWithPaging" resultType="com.radio.domain.MiniVO">
+<![CDATA[
+SELECT 
+	num, content, writer, regdate
+
+FROM
+	(SELECT 
+        ROW_NUMBER() OVER (ORDER BY num DESC) rn,
+        num, content, writer, regdate
+
+    FROM
+        tbl_mini
+]]>
+
+<include refid="criteria"></include>
+
+<![CDATA[        
+        )
+WHERE rn between ((#{pageNum}-1) * #{amount}) + 1 and #{pageNum} * #{amount}
+]]>
+</select>
+<insert id="insert">
+insert into tbl_mini (num, content, writer)
+values (seq_mini.nextval, #{content}, #{writer})
+</insert>
+
+<insert id="insertSelectKey">
+	<selectKey keyProperty="num" order="BEFORE" resultType="long">
+		select seq_mini.nextval from dual
+	</selectKey>
+	
+	insert into tbl_mini (num, content, writer)
+	values (#{num}, #{content}, #{writer} )
+
+</insert>
+
+<select id="getTotalCount" resultType="int">
+	select count(*) from tbl_mini
+	<include refid="criteria"></include>
+</select>
+
+<delete id="delete">
+	delete from tbl_mini
+	where num = #{num}
+</delete>
+</mapper>

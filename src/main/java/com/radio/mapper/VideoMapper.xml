@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+  
+  <mapper namespace="com.radio.mapper.VideoMapper">
+  
+  	<!-- 게시물 목록 보기 -->
+  	<select id="getList" resultType="com.radio.domain.VideoVO">
+  		SELECT rn, video_bno, video_title, video_date, video_thumbnail, 
+  		video_vod, video_view_cnt, video_regdate, video_updatedate
+		FROM 
+		(SELECT ROW_NUMBER() OVER(ORDER BY video_bno DESC) rn, video_bno, 
+		video_title, video_date, video_thumbnail, video_vod, video_view_cnt, 
+		video_regdate, video_updatedate FROM tbl_video)
+		WHERE rn BETWEEN (#{pageNum} - 1) * #{amount} + 1 AND #{pageNum} * #{amount}
+
+  	</select>
+  	
+  	
+  	<!-- 게시물 등록 -->
+  	<insert id="register">
+  		<selectKey keyProperty="video_bno" order="BEFORE" resultType="Long">
+ 			SELECT seq_video.nextval FROM dual
+ 		</selectKey>
+ 		
+ 		INSERT INTO tbl_video (video_bno, video_title, video_date, video_thumbnail, video_vod) 		                  
+ 		VALUES (#{video_bno}, #{video_title}, #{video_date}, #{video_thumbnail}, #{video_vod})
+ 		
+  	</insert>
+  	
+  	
+  	<!-- 게시물 읽기 -->
+  	<select id="read" resultType="com.radio.domain.VideoVO">
+  		SELECT * FROM tbl_video WHERE video_bno = #{video_bno}
+  	</select>
+  	
+  	
+  	<!-- 게시물 수정 -->
+  	<update id="modify">
+  		UPDATE tbl_video SET
+  		video_title = #{video_title},
+  		video_date = #{video_date},
+  		video_thumbnail = #{video_thumbnail},
+  		video_vod = #{video_vod},
+  		video_updatedate = sysdate + 9/24
+  		WHERE video_bno = #{video_bno}
+  	</update>
+  	
+  	
+  	<!-- 게시물 삭제 -->
+  	<delete id="delete">
+  		DELETE FROM tbl_video WHERE video_bno = #{video_bno}
+  	</delete>	
+  	
+  	
+  	<!-- 전체 게시물 수 -->
+  	<select id="getTotal" resultType="int">
+  		SELECT count(*) FROM tbl_video
+  	</select>
+  	
+  	
+  	<!-- 조회수 증가 -->
+  	<update id="increaseView_cnt">
+  		UPDATE tbl_video SET video_view_cnt = video_view_cnt + 1 WHERE video_bno = #{video_bno}
+  	</update>
+  	
+  </mapper>

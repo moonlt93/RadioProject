@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.radio.mapper.PlayListMapper"><!-- 동일한 속성값을 줘야함. -->
+
+	<sql id="criteria">
+		<where>
+			<foreach item="type" collection="typeArr" separator="OR">
+				<choose>
+					<when test="type == 'T'.toString()">
+						title LIKE '%' || #{keyword} || '%'
+					</when>
+					<when test="type == 'C'.toString()">
+						content LIKE '%' || #{keyword} || '%'
+					</when>
+					<when test="type == 'W'.toString()">
+						writer LIKE '%' || #{keyword} || '%'
+					</when>
+				</choose>
+			</foreach>
+		</where>
+	</sql>
+	<select id="getList" resultType="com.radio.domain.PlayListVO">
+		<!-- 부등호를 사용하기 위해 사용. -->
+		
+<![CDATA[ 
+select * from  tbl_PlayList where bno>0
+
+]]>
+
+	</select>
+
+	<select id="getListWithPaging"
+		resultType="com.radio.domain.PlayListVO">
+<![CDATA[	
+	SELECT
+	 bno, title, content,
+	 writer, regdate, updatedate,hit
+	FROM
+	 (
+	  SELECT 
+	   ROW_NUMBER() OVER (ORDER BY bno DESC) rn,
+	   bno, title, content, writer,
+	   regdate, updatedate , hit
+	  FROM
+	   tbl_PlayList
+]]>
+
+		<include refid="criteria"></include>
+
+<![CDATA[
+	 )
+	WHERE
+	 rn BETWEEN (#{pageNum} - 1) * #{amount} + 1 AND #{pageNum} * #{amount}
+]]>
+	</select>
+
+	<!-- id속성값은 메소드 이름과 일치하게 , result속성값은 select 쿼리의 결과를 객체로 만들기 위해 설정. -->
+	<insert id="insert">
+		insert into  tbl_PlayList(bno,title,content,writer)
+		values(seq_Pboard.nextval, #{title},#{content},#{writer})
+
+	</insert>
+
+	<insert id="insertSelectKey">
+		<selectKey keyProperty="bno" order="BEFORE"
+			resultType="long">
+			select seq_Pboard.nextval from dual
+		</selectKey>
+
+		insert into  tbl_PlayList (bno, title, content, writer)
+		values (#{bno },
+		#{title}, #{content}, #{writer})
+	</insert>
+
+	<select id="read" resultType="com.radio.domain.PlayListVO">
+		select * from  tbl_PlayList where bno =
+		#{bno}
+
+	</select>
+
+	<update id="update">
+
+		update  tbl_PlayList
+		set
+		title=#{title},
+		content=#{content},
+		writer =#{writer},
+		updateDate = sysdate
+		where
+		bno =
+		#{bno}
+
+	</update>
+
+
+	<delete id="delete">
+		delete from  tbl_PlayList where bno = #{bno}
+	</delete>
+
+	<select id="getTotalCount" resultType="int">
+		SELECT count(*) FROM  tbl_PlayList
+		<include refid="criteria"></include>
+	</select>
+
+	<update id="boardHit" >
+	UPDATE  tbl_PlayList SET
+	hit = hit+1
+	where bno=#{bno}
+	</update>
+
+</mapper>
+
+
+
+

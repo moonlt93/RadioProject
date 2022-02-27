@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+  
+ <mapper namespace="com.radio.mapper.BoardMapper">
+ 
+ 
+<sql id="research">
+<where>
+	<foreach item="type" collection="typeArr">
+		<choose>
+			<when test="type == 'T'.toString()">
+				board_title LIKE '%' || #{keyword} || '%'
+			</when>
+			<when test="type == 'N'.toString()">
+				board_bno = #{keyword} 
+			</when>
+			<when test="type == 'I'.toString()">
+				board_id = #{keyword} 
+			</when>
+		</choose>
+	</foreach>
+</where>
+</sql>
+ 	
+ 	<!-- 공지글 제외 게시물 얻어오기(요일별) -->
+ 	<select id="getList" resultType="com.radio.domain.BoardVO">
+ 		<![CDATA[
+ 		SELECT rn, board_bno, board_title, board_content, board_id, board_regdate, board_updatedate, board_pin, board_read_cnt, board_day
+ 		FROM
+		(
+		SELECT ROW_NUMBER() OVER(ORDER BY board_pin DESC, board_bno DESC) rn,
+		board_bno, board_title, board_content, board_id, board_regdate, board_updatedate, board_pin, board_read_cnt, board_day
+		FROM tbl_board  		
+ 		]]>
+ 		<trim suffix=" AND board_day= #{day} OR board_pin=1">
+ 			<include refid="research"></include>
+ 		</trim>
+ 		
+ 		<where>
+ 			<if test="type == null or type == ''">
+ 				board_day = #{day} OR board_pin=1
+ 			</if>
+ 		</where>
+ 		
+		) WHERE rn BETWEEN (#{pageNum} - 1) * #{amount} + 1 AND #{pageNum} * #{amount}
+ 	</select>
+ 	
+ 	
+ 	
+ 	
+ 	<!-- 게시물 등록하기 -->
+ 	<insert id="register">
+ 		<!-- board_bno(PK값) 미리 얻기 -->
+ 		<selectKey keyProperty="board_bno" order="BEFORE" resultType="Long">
+ 			SELECT seq_board.nextval FROM dual
+ 		</selectKey>
+ 		
+ 		INSERT INTO tbl_board(board_bno, board_title, board_content, board_id, board_day)
+ 		VALUES (#{board_bno}, #{board_title}, #{board_content}, #{board_id}, #{board_day}) 		 		
+ 	</insert>
+ 	
+ 	
+ 	<!-- 게시물 읽기 -->
+ 	<select id="read" resultType="com.radio.domain.BoardVO">
+ 		SELECT * FROM tbl_board WHERE board_bno = #{board_bno}
+ 	</select>
+ 	
+ 	<!-- 게시물 조회수 증가 -->
+ 	<update id="increaseRead_cnt">
+        UPDATE tbl_board
+        SET board_read_cnt = board_read_cnt + 1
+        WHERE board_bno = #{board_bno}
+ 	</update>
+ 	
+ 	
+ 	<!-- 게시물 삭제 -->
+ 	<delete id="delete">
+ 		DELETE FROM tbl_board WHERE board_bno = #{board_bno}
+ 	</delete>
+ 	
+ 	
+ 	<!-- 게시물 수정 -->
+ 	<update id="modify">
+ 		UPDATE tbl_board SET
+ 		board_title = #{board_title},
+ 		board_content = #{board_content},
+ 		board_updateDate = sysdate + 9/24
+ 		WHERE board_bno = #{board_bno}
+ 	</update>
+ 	
+ 	<!-- 게시물 총 개수 구하기 -->
+ 	<select id="getTotal" resultType="int">
+ 		SELECT count(*) FROM tbl_board 
+ 		<trim suffix=" AND board_day = #{day} OR board_pin=1">
+ 			<include refid="research"></include>
+ 		</trim>
+ 		
+ 		<where>
+ 			<if test="type == null or type==''">
+ 				board_day = #{day} OR board_pin=1
+ 			</if> 
+ 		</where>
+ 		
+ 	</select>
+ 	
+ 	<!-- Home화면 매일코너 소개글 요일처리 -->
+ 	<select id="getToday" resultType="int">
+ 		SELECT TO_CHAR(sysdate + 9/24, 'd') FROM dual
+ 	</select>
+ 	
+ 	
+ 	
+ </mapper>
